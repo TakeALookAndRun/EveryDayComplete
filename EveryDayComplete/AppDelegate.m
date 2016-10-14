@@ -7,8 +7,12 @@
 //
 
 #import "AppDelegate.h"
+#import "YCCurrentPlanController.h"
+#import <CoreData/CoreData.h>
 
-@interface AppDelegate ()
+@interface AppDelegate () {
+    UITabBarController *_rootTabController;
+}
 
 @end
 
@@ -17,7 +21,58 @@
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
     // Override point for customization after application launch.
+    _rootTabController = [[UITabBarController alloc] init];
+    self.window.rootViewController = _rootTabController;
+    [_rootTabController.tabBar setBackgroundColor:[UIColor grayColor]];
+    
+    YCCurrentPlanController *current = [[YCCurrentPlanController alloc] init];
+    [current.tabBarItem setTitle:@"当前计划"];
+    current.type = Current;
+    UINavigationController *currentNav = [[UINavigationController alloc] initWithRootViewController:current];
+    current.title = @"当前计划";
+    [_rootTabController addChildViewController:currentNav];
+    
+    YCCurrentPlanController *willDo = [[YCCurrentPlanController alloc] init];
+    [willDo.tabBarItem setTitle:@"未来计划"];
+    willDo.type = Will;
+    UINavigationController *willDoNav = [[UINavigationController alloc] initWithRootViewController:willDo];
+    [_rootTabController addChildViewController:willDoNav];
+    willDo.title = @"未来计划";
+    
+    YCCurrentPlanController *donePlan = [[YCCurrentPlanController alloc] init];
+    [donePlan.tabBarItem setTitle:@"过去计划"];
+    donePlan.type = Done;
+    UINavigationController *donePlanNav = [[UINavigationController alloc] initWithRootViewController:donePlan];
+    [_rootTabController addChildViewController:donePlanNav];
+    donePlan.title = @"过去计划";
+    
+    
+    if ([[UIApplication sharedApplication]currentUserNotificationSettings].types != UIUserNotificationTypeNone) {
+        [self addLocalNotification];
+    }else {
+        [[UIApplication sharedApplication]registerUserNotificationSettings:[UIUserNotificationSettings settingsForTypes:UIUserNotificationTypeAlert|UIUserNotificationTypeBadge|UIUserNotificationTypeSound categories:nil]];
+    }
+    
     return YES;
+}
+
+- (void)application:(UIApplication *)application didRegisterUserNotificationSettings:(UIUserNotificationSettings *)notificationSettings {
+    if (notificationSettings.types != UIUserNotificationTypeNone) {
+        [self addLocalNotification];
+    }
+}
+
+- (void)addLocalNotification {
+    UILocalNotification *notification = [[UILocalNotification alloc] init];
+    NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
+    [formatter setDateFormat:@"HH:mm"];
+    NSDate *nowDate = [formatter dateFromString:@"18:30"];
+    notification.fireDate = nowDate;
+    notification.repeatInterval = kCFCalendarUnitDay;
+    notification.timeZone = [NSTimeZone defaultTimeZone];
+    notification.alertBody = @"今天你的计划完成了吗";
+    notification.soundName = UILocalNotificationDefaultSoundName;
+    [[UIApplication sharedApplication]scheduleLocalNotification:notification];
 }
 
 - (void)applicationWillResignActive:(UIApplication *)application {
@@ -32,6 +87,7 @@
 
 - (void)applicationWillEnterForeground:(UIApplication *)application {
     // Called as part of the transition from the background to the inactive state; here you can undo many of the changes made on entering the background.
+    [[UIApplication sharedApplication]setApplicationIconBadgeNumber:0];
 }
 
 - (void)applicationDidBecomeActive:(UIApplication *)application {
@@ -41,5 +97,6 @@
 - (void)applicationWillTerminate:(UIApplication *)application {
     // Called when the application is about to terminate. Save data if appropriate. See also applicationDidEnterBackground:.
 }
+
 
 @end
